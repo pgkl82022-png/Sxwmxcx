@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+const base=process.env.TEST_BASE_URL||'http://127.0.0.1:3000';
+async function login(role){const r=await fetch(base+'/api/session',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({role})});assert.equal(r.status,200);return (await r.json()).token;}
+async function call(token,action,data={}){const r=await fetch(base+'/api/action',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({action,data})});return {status:r.status,body:await r.json()};}
+const customer=await login('customer'),admin=await login('admin'),rider=await login('rider');assert.equal((await call('', 'dashboard')).status,401);assert.equal((await call(customer,'dashboard')).status,400);
+const c=(await call(customer,'catalog')).body,p=c.products[0];const data={key:'http-'+Date.now(),items:[{id:p.id,price:p.price,quantity:2}],contact:{name:'虚构测试',phone:'13800000000',address:'虚构地址'},area:c.settings.areas[0],slot:c.settings.slots[0]};
+const responses=await Promise.all(Array.from({length:10},()=>call(customer,'checkout',data)));assert.ok(responses.every(r=>r.status===200));assert.equal(new Set(responses.map(r=>r.body.id)).size,1);const id=responses[0].body.id;assert.equal((await call(rider,'orders')).body.some(o=>o.id===id),false);
+for(const [actor,action,body] of [[customer,'pay',{id}],[customer,'pay',{id}],[admin,'transition',{id,status:'picking'}],[admin,'transition',{id,status:'assigned',riderId:'rider-demo'}],[rider,'transition',{id,status:'delivering'}],[rider,'transition',{id,status:'delivered'}]]){const r=await call(actor,action,body);assert.equal(r.status,200,JSON.stringify(r.body));}
+assert.equal((await call(customer,'orders')).body.find(o=>o.id===id).status,'delivered');console.log('HTTP集成通过：鉴权、10次并发幂等、骑手隔离、模拟支付、配送闭环');

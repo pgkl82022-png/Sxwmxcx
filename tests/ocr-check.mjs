@@ -1,0 +1,2 @@
+import {readFile} from 'node:fs/promises';import {parseFile} from '../cloudfunctions/files.js';import assert from 'node:assert/strict';
+const path=process.argv[2];if(!path)throw Error('用法: node tests/ocr-check.mjs 图片路径');const r=await parseFile({kind:'image',base64:(await readFile(path)).toString('base64')});assert.equal(r.kind,'ocr');assert.ok(r.text.trim());assert.ok(r.warning.includes('待确认'));assert.equal(r.csv,undefined);console.log('OCR产生待确认文本（不自动入库）：\n'+r.text);

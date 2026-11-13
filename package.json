@@ -1,1 +1,17 @@
-{"name":"fresh-market","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.js","test":"node --test"}}
+{
+  "name": "fresh-market",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "test:business": "node tests/system.test.js",
+    "test:structure": "node scripts/check-miniprogram.js",
+    "test:excel": "python tests/xlsx_test.py",
+    "test:http": "node tests/http-integration.mjs",
+    "test:browser": "node scripts/browser-smoke.cjs",
+    "db:init": "node scripts/maintenance.js init",
+    "db:check": "node scripts/maintenance.js validate"
+  }
+}
