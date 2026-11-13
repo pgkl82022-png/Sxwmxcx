@@ -1,10 +1,17 @@
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
-const files = { '/': ['index.html','text/html'], '/css/style.css': ['css/style.css','text/css'], '/js/app.js': ['js/app.js','text/javascript'], '/js/store.js': ['js/store.js','text/javascript'] };
-http.createServer(async (req,res) => {
-  const file = files[new URL(req.url,'http://localhost').pathname];
-  if (!['GET','HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
-  if (!file) { res.writeHead(404); res.end('Not found'); return; }
-  try { const body=await readFile(new URL(file[0],import.meta.url)); res.writeHead(200,{'Content-Type':file[1]+'; charset=utf-8','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:body); }
-  catch { res.writeHead(500);res.end('Unable to read file'); }
-}).listen(Number(process.env.PORT)||3000,'0.0.0.0',()=>console.log('Fresh market port '+(process.env.PORT||3000)));
+import {readFile,mkdir,chmod} from 'node:fs/promises';
+import {randomBytes,timingSafeEqual} from 'node:crypto';
+import {Repository} from './cloudfunctions/database.js';
+import {parseFile} from './cloudfunctions/files.js';
+import {Service,initialState} from './cloudfunctions/service.js';
+const dataDir=process.env.DATA_DIR||new URL('./.data/',import.meta.url).pathname;await mkdir(dataDir,{recursive:true,mode:0o700});await chmod(dataDir,0o700);const repository=new Repository(dataDir+'/shop.sqlite');await chmod(dataDir+'/shop.sqlite',0o600);const service=new Service(repository.load()||initialState()),sessions=new Map();const demo=process.env.DEMO_MODE==='true';const tokens={admin:process.env.ADMIN_TOKEN||randomBytes(32).toString('hex'),rider:process.env.RIDER_TOKEN||randomBytes(32).toString('hex'),customer:process.env.CUSTOMER_TOKEN||randomBytes(32).toString('hex')};const ids={admin:'admin-demo',rider:'rider-demo',customer:'customer-demo'};const same=(a,b)=>typeof a==='string'&&a.length===b.length&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
+async function persist(){repository.save(service.s);}
+async function body(req){let text='';for await(const c of req){text+=c; if(text.length>2000000)throw new Error('请求过大');}return JSON.parse(text||'{}');}
+const files={'/':['index.html','text/html'],'/css/style.css':['css/style.css','text/css'],'/js/app.js':['js/app.js','text/javascript'],'/js/store.js':['js/store.js','text/javascript'],'/admin/':['admin/index.html','text/html'],'/rider/':['rider/index.html','text/html'],'/admin/app.js':['admin/app.js','text/javascript'],'/admin/style.css':['admin/style.css','text/css']};
+let parsing=0;let queue=Promise.resolve();const limits=new Map();
+http.createServer(async(req,res)=>{const send=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});res.end(JSON.stringify(value));};try{const url=new URL(req.url,'http://localhost');if(url.pathname==='/api/health')return send(200,{ok:true,mode:demo?'local-demo':'token-auth',payment:'simulation'});if(url.pathname==='/api/session'&&req.method==='POST'){const key=req.socket.remoteAddress;const rate=limits.get(key)||{n:0,t:Date.now()};if(Date.now()-rate.t>60000){rate.n=0;rate.t=Date.now();}limits.set(key,rate);if(++rate.n>30)return send(429,{error:'登录请求过多'});const b=await body(req);if(!ids[b.role]||(!demo&&!same(b.token,tokens[b.role])))return send(401,{error:'登录失败'});const token=randomBytes(32).toString('hex');sessions.set(token,{id:ids[b.role],role:b.role,expires:Date.now()+3600000});return send(200,{token,mode:demo?'demo':'local-token'});}
+ if(url.pathname==='/api/file'&&req.method==='POST'){const actor=sessions.get((req.headers.authorization||'').replace(/^Bearer /,''));if(!actor||actor.expires<Date.now()||actor.role!=='admin')return send(403,{error:'仅管理员可解析附件'});if(parsing>=2)return send(429,{error:'附件解析繁忙，请稍后重试'});parsing++;try{const b=await body(req);return send(200,await parseFile(b));}finally{parsing--;}}
+ if(url.pathname==='/api/action'&&req.method==='POST'){const actor=sessions.get((req.headers.authorization||'').replace(/^Bearer /,''));if(!actor||actor.expires<Date.now())return send(401,{error:'请先登录'});const b=await body(req);const operation=queue.then(async()=>{const before=structuredClone(service.s);try{service.expire();const result=service.run(actor,b.action,b.data);await persist();return result;}catch(e){service.s=before;throw e;}});queue=operation.catch(()=>{});return send(200,await operation);}
+ const file=files[url.pathname];if(!file||!['GET','HEAD'].includes(req.method))return send(404,{error:'Not found'});const content=await readFile(new URL(file[0],import.meta.url));res.writeHead(200,{'Content-Type':file[1]+'; charset=utf-8','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'"});res.end(req.method==='HEAD'?undefined:content);
+ }catch(e){send(400,{error:e.message});}}).listen(Number(process.env.PORT)||3000,process.env.HOST||'127.0.0.1',()=>console.log('青禾鲜选 http://127.0.0.1:'+(process.env.PORT||3000)+' '+(demo?'演示模式':'令牌认证')));
+const timer=setInterval(()=>{queue=queue.then(async()=>{service.expire();await persist();}).catch(e=>console.error('持久化失败',e.code||'unknown'));},60000);timer.unref();
