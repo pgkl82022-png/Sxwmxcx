@@ -1,0 +1,9 @@
+.data/
+node_modules/
+.env
+artifacts/
+*.log
+project.private.config.json
+
+.models/
+__pycache__/
