@@ -1,6 +1,139 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>青禾鲜选 · 生鲜到家</title><link rel="stylesheet" href="/css/style.css"></head><body>
-<header><a class="brand" href="#">🌿 青禾鲜选<small>FRESH MARKET</small></a><nav aria-label="主导航"><button data-view="shop" class="active">逛逛市集</button><button data-view="cart">购物车 <span id="count">0</span></button><button data-view="orders">我的订单</button></nav></header>
-<main><section id="shop"><div class="hero"><div><small>GOOD FOOD, GOOD MOOD</small><h1>把新鲜，<br>带回每一天。</h1><p>当季好食材，认真选每一口。<br>从田间到餐桌，让生活多一点鲜活。</p><a class="primary" href="#market">挑选今日好物 ↗</a><p class="caption">产地直采 · 品质鲜选 · 用心配送</p></div><div class="hero-art" aria-hidden="true">🥬<span>🥕</span><i>🍋</i></div></div><div class="benefits"><span>🌱 当季新鲜食材</span><span>📦 满 ¥59 免配送费</span><span>♡ 为每一餐用心</span></div><section id="market"><div class="heading"><div><small>THE DAILY PICKS</small><h2>今日鲜选</h2></div><input type="search" id="search" placeholder="搜索你想吃的…" aria-label="搜索商品"></div><div id="categories"></div><div id="products"></div></section></section>
-<section id="cart" hidden><small>YOUR FRESH BAG</small><h1 class="title">我的购物车</h1><div id="cart-items"></div><div id="checkout" hidden><div id="summary"></div><form id="order-form"><h2>配送信息</h2><p class="muted">演示订单仅保存在当前浏览器，不会真实配送或扣款。请使用虚构信息。</p><label>收货人<input name="name" required maxlength="30" autocomplete="off"></label><label>联系电话<input name="phone" type="tel" required pattern="[0-9+() -]{6,20}" maxlength="20" autocomplete="off"></label><label>配送地址<input name="address" required maxlength="150" autocomplete="off"></label><button type="submit" class="primary">提交演示订单 →</button></form></div></section>
-<section id="orders" hidden><small>YOUR ORDERS</small><h1 class="title">我的订单</h1><p class="muted">本地演示记录 · 未接入支付与真实履约</p><div id="order-list"></div></section></main>
-<footer><strong>🌿 青禾鲜选</strong><span>认真吃饭，好好生活。</span><small>最小演示版本 · 数据存储于当前浏览器</small></footer><div id="toast" role="status" aria-live="polite"></div><script type="module" src="/js/app.js"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>青禾鲜选 · 生鲜到家</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="#">🌿 青禾鲜选<small>FRESH MARKET</small></a>
+      <nav aria-label="主导航">
+        <button data-view="shop" class="active">逛逛市集</button
+        ><button data-view="cart">购物车 <span id="count">0</span></button
+        ><button data-view="orders">我的订单</button
+        ><button data-view="merchant">商家演示</button>
+      </nav>
+    </header>
+    <main>
+      <section id="shop">
+        <div class="hero">
+          <div>
+            <small>GOOD FOOD, GOOD MOOD</small>
+            <h1>把新鲜，<br />带回每一天。</h1>
+            <p>
+              当季好食材，认真选每一口。<br />从田间到餐桌，让生活多一点鲜活。
+            </p>
+            <a class="primary" href="#market">挑选今日好物 ↗</a>
+            <p class="caption">产地直采 · 品质鲜选 · 用心配送</p>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            🥬<span>🥕</span><i>🍋</i>
+          </div>
+        </div>
+        <div class="benefits">
+          <span>🌱 当季新鲜食材</span><span>📦 满 ¥59 免配送费</span
+          ><span>♡ 为每一餐用心</span>
+        </div>
+        <section id="market">
+          <div class="heading">
+            <div>
+              <small>THE DAILY PICKS</small>
+              <h2>今日鲜选</h2>
+            </div>
+            <input
+              type="search"
+              id="search"
+              placeholder="搜索你想吃的…"
+              aria-label="搜索商品"
+            />
+          </div>
+          <div id="categories" aria-label="商品分类"></div>
+          <div class="catalog-tools">
+            <span id="results" role="status"></span
+            ><label
+              >排序
+              <select id="sort">
+                <option value="default">推荐优先</option>
+                <option value="price-up">价格从低到高</option>
+                <option value="price-down">价格从高到低</option>
+              </select></label
+            ><button id="reset-search">重置筛选</button>
+          </div>
+          <div id="products"></div>
+        </section>
+      </section>
+      <section id="cart" hidden>
+        <small>YOUR FRESH BAG</small>
+        <h1 class="title">我的购物车</h1>
+        <p id="shipping-tip" role="status"></p>
+        <button id="clear-cart" class="remove">清空购物车</button>
+        <div id="cart-items"></div>
+        <div id="checkout" hidden>
+          <div id="summary"></div>
+          <form id="order-form">
+            <h2>配送信息</h2>
+            <p class="muted">
+              演示订单仅保存在当前浏览器，不会真实配送或扣款。请使用虚构信息。
+            </p>
+            <label
+              >收货人<input
+                name="name"
+                required
+                maxlength="30"
+                autocomplete="off" /></label
+            ><label
+              >联系电话<input
+                name="phone"
+                type="tel"
+                required
+                pattern="[0-9+() -]{6,20}"
+                maxlength="20"
+                autocomplete="off" /></label
+            ><label
+              >配送地址<input
+                name="address"
+                required
+                maxlength="150"
+                autocomplete="off" /></label
+            ><button type="submit" class="primary">提交演示订单 →</button>
+          </form>
+        </div>
+      </section>
+      <section id="orders" hidden>
+        <small>YOUR ORDERS</small>
+        <h1 class="title">我的订单</h1>
+        <p class="muted">本地演示记录 · 未接入支付与真实履约</p>
+        <p>待接单 → 备货中 → 配送中 → 已完成</p>
+        <div id="order-list"></div>
+      </section>
+      <section id="merchant" hidden>
+        <small>MERCHANT DEMO</small>
+        <h1 class="title">商家订单管理</h1>
+        <p class="muted">
+          仅管理当前浏览器的模拟订单，无真实商家权限、支付或配送服务。
+        </p>
+        <div id="merchant-stats" class="stats"></div>
+        <label
+          >订单状态
+          <select id="merchant-filter">
+            <option value="全部">全部</option>
+            <option>待接单</option>
+            <option>备货中</option>
+            <option>配送中</option>
+            <option>已完成</option>
+            <option>已取消</option>
+          </select></label
+        >
+        <div id="merchant-list"></div>
+      </section>
+    </main>
+    <footer>
+      <strong>🌿 青禾鲜选</strong><span>认真吃饭，好好生活。</span
+      ><small>最小演示版本 · 数据存储于当前浏览器</small>
+    </footer>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

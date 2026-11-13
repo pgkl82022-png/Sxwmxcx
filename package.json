@@ -1,1 +1,11 @@
-{"name":"fresh-market","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.js","test":"node --test"}}
+{
+  "name": "fresh-market",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "test:browser": "node scripts/browser-check.mjs"
+  }
+}
