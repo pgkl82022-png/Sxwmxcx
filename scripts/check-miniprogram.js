@@ -1,0 +1,2 @@
+import {readFile,readdir} from 'node:fs/promises';import {check} from '../shared/rules.js';
+const config=JSON.parse(await readFile('project.config.json','utf8'));const app=JSON.parse(await readFile(config.miniprogramRoot+'app.json','utf8'));for(const page of app.pages){for(const suffix of ['.js','.json','.wxml']){const data=await readFile(config.miniprogramRoot+page+suffix,'utf8');check(data.length>0,'空页面');if(suffix==='.json')JSON.parse(data);}}console.log('小程序结构检查通过（不替代微信开发者工具编译）');
